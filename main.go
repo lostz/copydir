@@ -7,7 +7,9 @@ import (
 	"container/list"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -51,13 +53,19 @@ type dirMtimeInfo struct {
 	stat    *syscall.Stat_t
 }
 
-func DirCopy(srcDir, dstDir string) error {
+func DirCopy(srcDir, dstDir string, ignores []string) error {
 	// This is a map of source file inodes to dst file paths
 	copiedFiles := make(map[fileID]string)
 	dirsToSetMtimes := list.New()
 	err := filepath.Walk(srcDir, func(srcPath string, f os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+		filesuffix := path.Ext(srcPath)
+		for _, ignore := range ignores {
+			if ignore == filesuffix {
+				return nil
+			}
 		}
 		relPath, err := filepath.Rel(srcDir, srcPath)
 		if err != nil {
@@ -166,6 +174,7 @@ func main() {
 	})
 	sourceTarget := os.Getenv("source_target")
 	distTarget := os.Getenv("dist_target")
+	ignores := os.Getenv("ignores")
 	if sourceTarget == "" && distTarget == "" {
 		logrus.WithFields(logrus.Fields{
 			"source_target": sourceTarget,
@@ -173,7 +182,7 @@ func main() {
 		}).Error("invalid parameter")
 		return
 	}
-	err := DirCopy(sourceTarget, distTarget)
+	err := DirCopy(sourceTarget, distTarget, strings.Split(ignores, ","))
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"source_target": sourceTarget,
