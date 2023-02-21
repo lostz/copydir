@@ -27,7 +27,7 @@ jobs:
       with:
         name: ${{ github.actor }}/${{ env.DOCKER_REPO_NAME }}
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ secrets.PUSH_TOKEN }}
         platforms: linux/amd64
         registry: ghcr.io
         snapshot: false
